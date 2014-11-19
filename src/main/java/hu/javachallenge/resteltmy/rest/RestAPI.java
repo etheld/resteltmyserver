@@ -10,7 +10,6 @@ import hu.javachallenge.resteltmy.models.PickPackageModel;
 import hu.javachallenge.resteltmy.models.PickPackageStatus;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.FormParam;
@@ -20,6 +19,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -53,7 +54,7 @@ public class RestAPI {
     @Produces(MediaType.APPLICATION_JSON)
     public String pickPackage(@FormParam("packageId") Integer packageId) {
         Planet planet = worldMap.getPlanetByName(ship.getCurrentPlanet());
-        Optional<hu.javachallenge.resteltmy.entities.Package> packageToBePickedUp = findPackageOnPlanet(planet,
+        Package packageToBePickedUp = findPackageOnPlanet(planet,
                 packageId);
 
         if (worldMap.findPackage(packageId) == null) {
@@ -63,11 +64,11 @@ public class RestAPI {
                 return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
             }
 
-            if (packageToBePickedUp.isPresent()) {
+            if (packageToBePickedUp != null) {
                 if (ship.getCapacity() < 1) {
                     return returnPickPackageResponse(PickPackageStatus.LIMIT_EXCEEDED);
                 }
-                ship.pickPakage(packageToBePickedUp.get());
+                ship.pickPakage(packageToBePickedUp);
                 return returnPickPackageResponse(PickPackageStatus.PACKAGE_PICKED);
             }
             return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
@@ -77,16 +78,20 @@ public class RestAPI {
     @POST
     @Path("dropPackage")
     @Produces(MediaType.APPLICATION_JSON)
-    public String DropPackage(@FormParam("packageId") Integer packageId) {
+    public String DropPackage(@FormParam("packageId") final Integer packageId) {
 
-        Optional<Package> pack = ship.getPackages().stream().filter(p -> p.getId().equals(packageId)).findFirst();
+        Package pack = Iterables.find(ship.getPackages(), new Predicate<Package>() {
+            @Override
+            public boolean apply(Package input) {
+                return input.getId() == packageId;
+            }
+        });
 
-        if (pack.isPresent()) {
-            boolean targetReached = pack.get().getTargetPlanet().equals(ship.getCurrentPlanet());
-            boolean dropAtSource = pack.get().getOriginalPlanet().equals(ship.getCurrentPlanet());
+        if (pack != null) {
+            boolean targetReached = pack.getTargetPlanet().equals(ship.getCurrentPlanet());
+            boolean dropAtSource = pack.getOriginalPlanet().equals(ship.getCurrentPlanet());
             if (targetReached || dropAtSource) {
-                return returnDropPackageResponse(DropPackageStatus.PACKAGE_DROPPED, dropAtSource ? 0 : pack.get()
-                        .getFee());
+                return returnDropPackageResponse(DropPackageStatus.PACKAGE_DROPPED, dropAtSource ? 0 : pack.getFee());
             } else {
                 return returnDropPackageResponse(DropPackageStatus.NOT_AT_DESTINATION, 0);
             }
@@ -109,7 +114,12 @@ public class RestAPI {
         return new Gson().toJson(packageModel);
     }
 
-    private Optional<hu.javachallenge.resteltmy.entities.Package> findPackageOnPlanet(Planet planet, int packageId) {
-        return planet.getPackages().stream().filter(p -> packageId == p.getId()).findAny();
+    private Package findPackageOnPlanet(Planet planet, final int packageId) {
+        return Iterables.find(planet.getPackages(), new Predicate<Package>() {
+            @Override
+            public boolean apply(Package input) {
+                return input.getId() == packageId;
+            }
+        });
     }
 }
