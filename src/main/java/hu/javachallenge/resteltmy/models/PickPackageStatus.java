@@ -1,4 +1,4 @@
-package hu.javachallenge.resteltmy.app.models;
+package hu.javachallenge.resteltmy.models;
 
 /**
  *

@@ -1,26 +1,11 @@
 package hu.javachallenge.resteltmy.app;
 
-import java.io.Closeable;
-import java.io.IOException;
+import hu.javachallenge.resteltmy.rest.RestAPI;
 
-import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
-import com.sun.jersey.api.core.DefaultResourceConfig;
-import com.sun.jersey.simple.container.SimpleServerFactory;
+import org.glassfish.jersey.server.ResourceConfig;
 
-public class App {
-	public static void main(String[] args) throws IllegalArgumentException, IOException {
-		DefaultResourceConfig resourceConfig = new DefaultResourceConfig(
-				RestAPI.class);
-		// The following line is to enable GZIP when client accepts it
-		resourceConfig.getContainerResponseFilters().add(
-				new GZIPContentEncodingFilter());
-		Closeable server = SimpleServerFactory.create("http://0.0.0.0:8888",
-				resourceConfig);
-		try {
-			System.out.println("Press any key to stop the service...");
-			System.in.read();
-		} finally {
-			server.close();
-		}
-	}
+public class App extends ResourceConfig {
+    public App() {
+        register(RestAPI.class);
+    }
 }

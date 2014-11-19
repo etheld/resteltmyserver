@@ -1,4 +1,4 @@
-package hu.javachallenge.resteltmy.app.util;
+package hu.javachallenge.resteltmy.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
