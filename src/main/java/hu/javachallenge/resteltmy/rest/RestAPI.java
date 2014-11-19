@@ -19,6 +19,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
@@ -28,6 +31,9 @@ import com.google.gson.GsonBuilder;
 public class RestAPI {
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    @Inject
+    private ApplicationContext applicationContext;
 
     @Inject
     private Ship ship;
@@ -75,6 +81,11 @@ public class RestAPI {
         }
     }
 
+    @GET
+    @Path("reset")
+    public void reset() {
+        ((ConfigurableApplicationContext)applicationContext).refresh();
+    }
     @POST
     @Path("dropPackage")
     @Produces(MediaType.APPLICATION_JSON)
