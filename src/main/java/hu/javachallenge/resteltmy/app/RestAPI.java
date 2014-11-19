@@ -3,6 +3,8 @@ package hu.javachallenge.resteltmy.app;
 import hu.javachallenge.resteltmy.WorldMap;
 import hu.javachallenge.resteltmy.app.models.DropPackageModel;
 import hu.javachallenge.resteltmy.app.models.DropPackageStatus;
+import hu.javachallenge.resteltmy.app.models.GoModel;
+import hu.javachallenge.resteltmy.app.models.GoStatus;
 import hu.javachallenge.resteltmy.app.models.PickPackageModel;
 import hu.javachallenge.resteltmy.app.models.PickPackageStatus;
 import hu.javachallenge.resteltmy.entities.Package;
@@ -30,12 +32,12 @@ public class RestAPI {
 
 	private Ship ship = Ship.getInstance();
 
-	private WorldMap WorldMap = hu.javachallenge.resteltmy.WorldMap.getInstance();
+	private WorldMap worldMap = hu.javachallenge.resteltmy.WorldMap.getInstance();
 
 	public RestAPI() {
 		if (ship.getCurrentPlanet() == null) {
 			Random rng = new Random();
-			Planet starterPlanet = WorldMap.getPlanets().get(rng.nextInt(WorldMap.getPlanets().size()));
+			Planet starterPlanet = worldMap.getPlanets().get(rng.nextInt(worldMap.getPlanets().size()));
 			ship.setCurrentPlanet(starterPlanet.getName());
 			ship.setUserName("restelt my");
 			ship.setTarget(starterPlanet.getName());
@@ -46,7 +48,7 @@ public class RestAPI {
 	@Path("getGalaxy")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getGalaxy() {
-		return WorldMap.toString();
+		return worldMap.toString();
 	}
 
 	@GET
@@ -60,14 +62,14 @@ public class RestAPI {
 	@Path("pickPackage")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String pickPackage(@FormParam("packageId") Integer packageId) {
-		Planet planet = WorldMap.getPlanetByName(ship.getCurrentPlanet());
+		Planet planet = worldMap.getPlanetByName(ship.getCurrentPlanet());
 		Optional<hu.javachallenge.resteltmy.entities.Package> packageToBePickedUp = findPackageOnPlanet(planet,
 				packageId);
 
-		if (WorldMap.findPackage(packageId) == null) {
+		if (worldMap.findPackage(packageId) == null) {
 			return returnPickPackageResponse(PickPackageStatus.NOT_FOUND);
 		} else {
-			if (!Objects.equals(WorldMap.findPackage(packageId), ship.getCurrentPlanet())) {
+			if (!Objects.equals(worldMap.findPackage(packageId), ship.getCurrentPlanet())) {
 				return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
 			}
 
@@ -101,6 +103,35 @@ public class RestAPI {
 
 		}
 		return returnDropPackageResponse(DropPackageStatus.NOT_WITH_USER, 0);
+	}
+
+	@POST
+	@Path("go")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String go(@FormParam("planetName") String planetName) {
+		GoModel goModel = new GoModel();
+		Planet destination;
+		try {
+			destination = worldMap.getPlanetByName(planetName);
+		} catch (RuntimeException e) {
+			return returnGoModelResponse(GoStatus.UNKNOWN_PLANET, planetName, null);
+		}
+		if (ship.getCurrentPlanet().equals(destination)) {
+			return returnGoModelResponse(GoStatus.NOTHING_TO_DO, planetName, null);
+		} else {
+			Integer arriveAfterMs = ship.calculateArrive(destination, worldMap);
+			ship.move(arriveAfterMs, destination);
+			return returnGoModelResponse(GoStatus.MOVING, planetName, arriveAfterMs);
+		}
+
+	}
+
+	private String returnGoModelResponse(GoStatus status, String destination, Integer arriveAfterMs) {
+		GoModel goModel = new GoModel();
+		goModel.setStatus(status);
+		goModel.setDestination(destination);
+		goModel.setArriveAfterMs(arriveAfterMs);
+		return new Gson().toJson(goModel);
 	}
 
 	private String returnDropPackageResponse(DropPackageStatus status, int score) {
