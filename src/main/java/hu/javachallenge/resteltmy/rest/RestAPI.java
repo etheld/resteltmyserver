@@ -143,6 +143,7 @@ public class RestAPI {
 			boolean targetReached = pack.getTargetPlanet().equals(ship.getCurrentPlanet());
 			boolean dropAtSource = pack.getOriginalPlanet().equals(ship.getCurrentPlanet());
 			if (targetReached || dropAtSource) {
+				ship.dropPackage(pack);
 				return returnDropPackageResponse(DropPackageStatus.PACKAGE_DROPPED, dropAtSource ? 0 : pack.getFee());
 			} else {
 				return returnDropPackageResponse(DropPackageStatus.NOT_AT_DESTINATION, 0);
