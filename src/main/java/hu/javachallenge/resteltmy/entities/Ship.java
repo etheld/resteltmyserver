@@ -31,7 +31,7 @@ public class Ship {
 	private transient Long startTime;
 
 	private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Ship.class);
-	
+
 	public Ship(WorldMap worldMap) {
 		Random rng = new Random();
 		Planet starterPlanet = worldMap.getPlanets().get(rng.nextInt(worldMap.getPlanets().size()));
@@ -43,6 +43,12 @@ public class Ship {
 	private Integer arriveAfterMs;
 
 	private final transient Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+
+	private transient int speedConstant = 1000;;
+
+	public void setSpeedConstant(int speedConstant) {
+		this.speedConstant = speedConstant;
+	}
 
 	public Integer getArriveAfterMs() {
 		return arriveAfterMs;
@@ -112,14 +118,14 @@ public class Ship {
 	public Integer calculateArrive(final Planet destination, final WorldMap worldMap) {
 		Planet source = worldMap.getPlanetByName(currentPlanet);
 		double distance = source.getDistance(destination);
-		return (int) (distance / getSpeed())*1000;
+		return (int) (distance / getSpeed()) * speedConstant;
 	}
 
 	public boolean isMovingCurrently() {
 		return startTime + arriveAfterMs > System.currentTimeMillis();
 	}
 
-	public void move(final Integer arriveAfterMs, final  Planet destination) {
+	public void move(final Integer arriveAfterMs, final Planet destination) {
 		if (startTime == null || startTime + arriveAfterMs > System.currentTimeMillis()) {
 			System.out.println("Starting");
 			startTime = System.currentTimeMillis();
