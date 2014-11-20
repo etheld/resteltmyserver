@@ -70,6 +70,8 @@ public class Ship {
 
 	@Override
 	public String toString() {
+		arriveAfterMs = arriveAfterMs != null && arriveAfterMs - System.currentTimeMillis() > 0 ? (int) (arriveAfterMs - System
+				.currentTimeMillis()) : null;
 		return gson.toJson(this);
 	}
 
@@ -107,7 +109,7 @@ public class Ship {
 		return packages;
 	}
 
-	public Integer calculateArrive(Planet destination, WorldMap worldMap) {
+	public Integer calculateArrive(final Planet destination, final WorldMap worldMap) {
 		Planet source = worldMap.getPlanetByName(currentPlanet);
 		double distance = source.getDistance(destination);
 		return (int) (distance / getSpeed());
@@ -117,7 +119,7 @@ public class Ship {
 		return startTime + arriveAfterMs > System.currentTimeMillis();
 	}
 
-	public void move(Integer arriveAfterMs, final Planet destination) {
+	public void move(final Integer arriveAfterMs, final  Planet destination) {
 		if (startTime == null || startTime + arriveAfterMs > System.currentTimeMillis()) {
 			System.out.println("Starting");
 			startTime = System.currentTimeMillis();
