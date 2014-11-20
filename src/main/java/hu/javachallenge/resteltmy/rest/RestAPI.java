@@ -106,8 +106,10 @@ public class RestAPI {
 
 	@GET
 	@Path("speed")
-	public void speed(@PathParam("{speed}") Integer speed) {
+	@Produces(MediaType.APPLICATION_JSON)
+	public String speed(@PathParam("{speed}") Integer speed) {
 		ship.setSpeedConstant(speed);
+		return "speed is: " + speed;
 	}
 	
 	private String returnGoModelResponse(GoStatus status, String destination, Integer arriveAfterMs) {
