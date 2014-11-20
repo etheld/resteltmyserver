@@ -77,6 +77,7 @@ public class RestAPI {
 					return returnPickPackageResponse(PickPackageStatus.LIMIT_EXCEEDED);
 				}
 				ship.pickPakage(packageToBePickedUp);
+				planet.getPackages().remove(packageToBePickedUp);
 				return returnPickPackageResponse(PickPackageStatus.PACKAGE_PICKED);
 			}
 			return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
