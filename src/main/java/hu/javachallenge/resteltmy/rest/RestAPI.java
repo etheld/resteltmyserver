@@ -121,13 +121,14 @@ public class RestAPI {
 	@Path("dropPackage")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String DropPackage(@FormParam("packageId") final Integer packageId) {
-
-		Package pack = Iterables.find(ship.getPackages(), new Predicate<Package>() {
-			@Override
-			public boolean apply(Package input) {
-				return input.getId() == packageId;
-			}
-		});
+		
+		Package pack = findPackageOnShip(ship, packageId); 
+		// Iterables.find(ship.getPackages(), new Predicate<Package>() {
+		// @Override
+		// public boolean apply(Package input) {
+		// return input.getId() == packageId;
+		// }
+		// });
 
 		if (pack != null) {
 			boolean targetReached = pack.getTargetPlanet().equals(ship.getCurrentPlanet());
@@ -140,6 +141,15 @@ public class RestAPI {
 
 		}
 		return returnDropPackageResponse(DropPackageStatus.NOT_WITH_USER, 0);
+	}
+
+	private Package findPackageOnShip(Ship ship2, Integer packageId) {
+		for(Package pack: ship2.getPackages()) {
+			if (pack.getId().equals(packageId)) {
+				return pack;
+			}
+		}
+		return null;
 	}
 
 	private String returnDropPackageResponse(DropPackageStatus status, int score) {
