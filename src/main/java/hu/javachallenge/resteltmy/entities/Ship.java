@@ -6,100 +6,142 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 public class Ship {
 
-    private transient int capacity = 3;
+	private transient int capacity = 3;
 
-    private static final int SPEED_DECREASE_PER_PACKET = 20;
-    private static final int FULLSPEED = 170;
+	private static final int SPEED_DECREASE_PER_PACKET = 20;
+	private static final int FULLSPEED = 170;
 
-    private final List<Package> packages = new ArrayList<Package>();
-    private String userName;
+	private final List<Package> packages = new ArrayList<Package>();
+	private String userName;
 
-    @SerializedName("planetName")
-    private String target;
+	@SerializedName("targetPlanetName")
+	private String target;
 
-    @SerializedName("targetPlanetName")
-    private String currentPlanet;
+	@SerializedName("planetName")
+	private String currentPlanet;
 
-    public Ship(WorldMap worldMap) {
-        Random rng = new Random();
-        Planet starterPlanet = worldMap.getPlanets().get(rng.nextInt(worldMap.getPlanets().size()));
-        setCurrentPlanet(starterPlanet.getName());
-        setUserName("restelt my");
-        setTarget(starterPlanet.getName());
-    }
+	private transient Long startTime;
 
-    private Integer arriveAfterMs;
+	private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Ship.class);
+	
+	public Ship(WorldMap worldMap) {
+		Random rng = new Random();
+		Planet starterPlanet = worldMap.getPlanets().get(rng.nextInt(worldMap.getPlanets().size()));
+		setCurrentPlanet(starterPlanet.getName());
+		setUserName("restelt my");
+		setTarget(starterPlanet.getName());
+	}
 
-    private final transient Gson gson = new GsonBuilder().setPrettyPrinting()
-            .serializeNulls().create();
+	private Integer arriveAfterMs;
 
-    public Integer getArriveAfterMs() {
-        return arriveAfterMs;
-    }
+	private final transient Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
-    public int getCapacity() {
-        return capacity;
-    }
+	public Integer getArriveAfterMs() {
+		return arriveAfterMs;
+	}
 
-    public String getTarget() {
-        return target;
-    }
+	public int getCapacity() {
+		return capacity;
+	}
 
-    public void setTarget(String target) {
-        this.target = target;
-    }
+	public String getTarget() {
+		return target;
+	}
 
-    public String getCurrentPlanet() {
-        return currentPlanet;
-    }
+	public void setTarget(String target) {
+		this.target = target;
+	}
 
-    public void setCurrentPlanet(String currentPlanet) {
-        this.currentPlanet = currentPlanet;
-    }
+	public String getCurrentPlanet() {
+		return currentPlanet;
+	}
 
-    @Override
-    public String toString() {
-        return gson.toJson(this);
-    }
+	public void setCurrentPlanet(String currentPlanet) {
+		this.currentPlanet = currentPlanet;
+	}
 
-    public void setArriveAfterMs(Integer arriveAfterMs) {
-        this.arriveAfterMs = arriveAfterMs;
-    }
+	@Override
+	public String toString() {
+		arriveAfterMs = arriveAfterMs != null && arriveAfterMs - System.currentTimeMillis() > 0 ? (int) (arriveAfterMs - System
+				.currentTimeMillis()) : null;
+		return gson.toJson(this);
+	}
 
-    public String getUserName() {
-        return userName;
-    }
+	public void setArriveAfterMs(Integer arriveAfterMs) {
+		this.arriveAfterMs = arriveAfterMs;
+	}
 
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
+	public String getUserName() {
+		return userName;
+	}
 
-    public int getSpeed() {
-        return FULLSPEED - packages.size() * SPEED_DECREASE_PER_PACKET;
-    }
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
 
-    public boolean isMoving() {
-        return !target.equals(currentPlanet);
-    }
+	public int getSpeed() {
+		return FULLSPEED - packages.size() * SPEED_DECREASE_PER_PACKET;
+	}
 
-    public void pickPakage(Package p) {
-        packages.add(p);
-        capacity--;
-    }
+	public boolean isMoving() {
+		return !target.equals(currentPlanet);
+	}
 
-    public void dropPackage(Package p) {
-        packages.remove(p);
-        capacity++;
-    }
+	public void pickPakage(Package p) {
+		packages.add(p);
+		capacity--;
+	}
 
-    public List<Package> getPackages() {
-        return packages;
-    }
+	public void dropPackage(Package p) {
+		packages.remove(p);
+		capacity++;
+	}
+
+	public List<Package> getPackages() {
+		return packages;
+	}
+
+	public Integer calculateArrive(Planet destination, WorldMap worldMap) {
+		Planet source = worldMap.getPlanetByName(currentPlanet);
+		double distance = source.getDistance(destination);
+		return (int) (distance / getSpeed());
+	}
+
+	public boolean isMovingCurrently() {
+		return startTime + arriveAfterMs > System.currentTimeMillis();
+	}
+
+	public void move(Integer arriveAfterMs, Planet destination) {
+		if (startTime == null || startTime + arriveAfterMs > System.currentTimeMillis()) {
+			System.out.println("Starting");
+			startTime = System.currentTimeMillis();
+		}
+		target = destination.getName();
+		Runnable run = new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					LOG.debug("Sleeping: " + arriveAfterMs);
+					Thread.sleep(arriveAfterMs * 1000);
+					LOG.debug("Changing currentplant: " + currentPlanet);
+					currentPlanet = destination.getName();
+					LOG.debug("Changed currentplant: " + currentPlanet);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+
+		new Thread(run).start();
+	}
 
 }

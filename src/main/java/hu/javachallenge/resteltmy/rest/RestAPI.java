@@ -6,6 +6,8 @@ import hu.javachallenge.resteltmy.entities.Planet;
 import hu.javachallenge.resteltmy.entities.Ship;
 import hu.javachallenge.resteltmy.models.DropPackageModel;
 import hu.javachallenge.resteltmy.models.DropPackageStatus;
+import hu.javachallenge.resteltmy.models.GoModel;
+import hu.javachallenge.resteltmy.models.GoStatus;
 import hu.javachallenge.resteltmy.models.PickPackageModel;
 import hu.javachallenge.resteltmy.models.PickPackageStatus;
 
@@ -30,107 +32,136 @@ import com.google.gson.GsonBuilder;
 @Path("/rest")
 public class RestAPI {
 
-    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    @Inject
-    private ApplicationContext applicationContext;
+	@Inject
+	private ApplicationContext applicationContext;
 
-    @Inject
-    private Ship ship;
+	@Inject
+	private Ship ship;
 
-    @Inject
-    private WorldMap worldMap;
+	@Inject
+	private WorldMap worldMap;
 
-    @GET
-    @Path("getGalaxy")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getGalaxy() {
-        return worldMap.toString();
-    }
+	@GET
+	@Path("getGalaxy")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getGalaxy() {
+		return worldMap.toString();
+	}
 
-    @GET
-    @Path("whereIs")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String whereIs() {
-        return ship.toString();
-    }
+	@GET
+	@Path("whereIs")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String whereIs() {
+		return ship.toString();
+	}
 
-    @POST
-    @Path("pickPackage")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String pickPackage(@FormParam("packageId") Integer packageId) {
-        Planet planet = worldMap.getPlanetByName(ship.getCurrentPlanet());
-        Package packageToBePickedUp = findPackageOnPlanet(planet,
-                packageId);
+	@POST
+	@Path("pickPackage")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String pickPackage(@FormParam("packageId") Integer packageId) {
+		Planet planet = worldMap.getPlanetByName(ship.getCurrentPlanet());
+		Package packageToBePickedUp = findPackageOnPlanet(planet, packageId);
 
-        if (worldMap.findPackage(packageId) == null) {
-            return returnPickPackageResponse(PickPackageStatus.NOT_FOUND);
-        } else {
-            if (!Objects.equals(worldMap.findPackage(packageId), ship.getCurrentPlanet())) {
-                return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
-            }
+		if (worldMap.findPackage(packageId) == null) {
+			return returnPickPackageResponse(PickPackageStatus.NOT_FOUND);
+		} else {
+			if (!Objects.equals(worldMap.findPackage(packageId), ship.getCurrentPlanet())) {
+				return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
+			}
 
-            if (packageToBePickedUp != null) {
-                if (ship.getCapacity() < 1) {
-                    return returnPickPackageResponse(PickPackageStatus.LIMIT_EXCEEDED);
-                }
-                ship.pickPakage(packageToBePickedUp);
-                return returnPickPackageResponse(PickPackageStatus.PACKAGE_PICKED);
-            }
-            return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
-        }
-    }
+			if (packageToBePickedUp != null) {
+				if (ship.getCapacity() < 1) {
+					return returnPickPackageResponse(PickPackageStatus.LIMIT_EXCEEDED);
+				}
+				ship.pickPakage(packageToBePickedUp);
+				return returnPickPackageResponse(PickPackageStatus.PACKAGE_PICKED);
+			}
+			return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
+		}
+	}
 
-    @GET
-    @Path("reset")
-    public void reset() {
-        ((ConfigurableApplicationContext)applicationContext).refresh();
-    }
-    @POST
-    @Path("dropPackage")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String DropPackage(@FormParam("packageId") final Integer packageId) {
+	@POST
+	@Path("go")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String go(@FormParam("planetName") String planetName) {
+		GoModel goModel = new GoModel();
+		Planet destination;
+		try {
+			destination = worldMap.getPlanetByName(planetName);
+		} catch (RuntimeException e) {
+			return returnGoModelResponse(GoStatus.UNKNOWN_PLANET, planetName, null);
+		}
+		if (ship.getCurrentPlanet().equals(destination)) {
+			return returnGoModelResponse(GoStatus.NOTHING_TO_DO, planetName, null);
+		} else {
+			Integer arriveAfterMs = ship.calculateArrive(destination, worldMap);
+			ship.move(arriveAfterMs, destination);
+			return returnGoModelResponse(GoStatus.MOVING, planetName, arriveAfterMs);
+		}
 
-        Package pack = Iterables.find(ship.getPackages(), new Predicate<Package>() {
-            @Override
-            public boolean apply(Package input) {
-                return input.getId() == packageId;
-            }
-        });
+	}
 
-        if (pack != null) {
-            boolean targetReached = pack.getTargetPlanet().equals(ship.getCurrentPlanet());
-            boolean dropAtSource = pack.getOriginalPlanet().equals(ship.getCurrentPlanet());
-            if (targetReached || dropAtSource) {
-                return returnDropPackageResponse(DropPackageStatus.PACKAGE_DROPPED, dropAtSource ? 0 : pack.getFee());
-            } else {
-                return returnDropPackageResponse(DropPackageStatus.NOT_AT_DESTINATION, 0);
-            }
+	private String returnGoModelResponse(GoStatus status, String destination, Integer arriveAfterMs) {
+		GoModel goModel = new GoModel();
+		goModel.setStatus(status);
+		goModel.setDestination(destination);
+		goModel.setArriveAfterMs(arriveAfterMs);
+		return new Gson().toJson(goModel);
+	}
 
-        }
-        return returnDropPackageResponse(DropPackageStatus.NOT_WITH_USER, 0);
-    }
+	@GET
+	@Path("reset")
+	public void reset() {
+		((ConfigurableApplicationContext) applicationContext).refresh();
+	}
 
-    private String returnDropPackageResponse(DropPackageStatus status, int score) {
-        DropPackageModel packageModel = new DropPackageModel();
-        packageModel.setScoreIncrease(score);
-        packageModel.setStatus(status);
-        return new Gson().toJson(packageModel);
-    }
+	@POST
+	@Path("dropPackage")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String DropPackage(@FormParam("packageId") final Integer packageId) {
 
-    private String returnPickPackageResponse(PickPackageStatus status) {
-        PickPackageModel packageModel = new PickPackageModel();
-        packageModel.setRemainingCapacity(ship.getCapacity());
-        packageModel.setStatus(status);
-        return new Gson().toJson(packageModel);
-    }
+		Package pack = Iterables.find(ship.getPackages(), new Predicate<Package>() {
+			@Override
+			public boolean apply(Package input) {
+				return input.getId() == packageId;
+			}
+		});
 
-    private Package findPackageOnPlanet(Planet planet, final int packageId) {
-        return Iterables.find(planet.getPackages(), new Predicate<Package>() {
-            @Override
-            public boolean apply(Package input) {
-                return input.getId() == packageId;
-            }
-        });
-    }
+		if (pack != null) {
+			boolean targetReached = pack.getTargetPlanet().equals(ship.getCurrentPlanet());
+			boolean dropAtSource = pack.getOriginalPlanet().equals(ship.getCurrentPlanet());
+			if (targetReached || dropAtSource) {
+				return returnDropPackageResponse(DropPackageStatus.PACKAGE_DROPPED, dropAtSource ? 0 : pack.getFee());
+			} else {
+				return returnDropPackageResponse(DropPackageStatus.NOT_AT_DESTINATION, 0);
+			}
+
+		}
+		return returnDropPackageResponse(DropPackageStatus.NOT_WITH_USER, 0);
+	}
+
+	private String returnDropPackageResponse(DropPackageStatus status, int score) {
+		DropPackageModel packageModel = new DropPackageModel();
+		packageModel.setScoreIncrease(score);
+		packageModel.setStatus(status);
+		return new Gson().toJson(packageModel);
+	}
+
+	private String returnPickPackageResponse(PickPackageStatus status) {
+		PickPackageModel packageModel = new PickPackageModel();
+		packageModel.setRemainingCapacity(ship.getCapacity());
+		packageModel.setStatus(status);
+		return new Gson().toJson(packageModel);
+	}
+
+	private Package findPackageOnPlanet(Planet planet, final int packageId) {
+		return Iterables.find(planet.getPackages(), new Predicate<Package>() {
+			@Override
+			public boolean apply(Package input) {
+				return input.getId() == packageId;
+			}
+		});
+	}
 }
