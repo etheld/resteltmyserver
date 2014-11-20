@@ -112,7 +112,7 @@ public class Ship {
 	public Integer calculateArrive(final Planet destination, final WorldMap worldMap) {
 		Planet source = worldMap.getPlanetByName(currentPlanet);
 		double distance = source.getDistance(destination);
-		return (int) (distance / getSpeed());
+		return (int) (distance / getSpeed())*1000;
 	}
 
 	public boolean isMovingCurrently() {
@@ -131,7 +131,7 @@ public class Ship {
 			public void run() {
 				try {
 					LOG.debug("Sleeping: " + arriveAfterMs);
-					Thread.sleep(arriveAfterMs * 1000);
+					Thread.sleep(arriveAfterMs);
 					LOG.debug("Changing currentplant: " + currentPlanet);
 					currentPlanet = destination.getName();
 					LOG.debug("Changed currentplant: " + currentPlanet);
