@@ -103,12 +103,10 @@ public class Ship {
 
 	public void pickPakage(Package p) {
 		packages.add(p);
-		capacity--;
 	}
 
 	public void dropPackage(Package p) {
 		packages.remove(p);
-		capacity++;
 	}
 
 	public List<Package> getPackages() {
