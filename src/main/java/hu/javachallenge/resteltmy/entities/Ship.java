@@ -14,8 +14,6 @@ import com.google.gson.annotations.SerializedName;
 
 public class Ship {
 
-	private transient int capacity = 3;
-
 	private static final int SPEED_DECREASE_PER_PACKET = 20;
 	private static final int FULLSPEED = 170;
 
@@ -31,6 +29,8 @@ public class Ship {
 	private transient Long startTime;
 
 	private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Ship.class);
+
+	private static final int MAX_CAPACITY = 3;
 
 	public Ship(WorldMap worldMap) {
 		Random rng = new Random();
@@ -55,7 +55,7 @@ public class Ship {
 	}
 
 	public int getCapacity() {
-		return capacity;
+		return MAX_CAPACITY-getPackages().size();
 	}
 
 	public String getTarget() {
