@@ -104,10 +104,10 @@ public class RestAPI {
 
 	}
 
-	@GET
+	@POST
 	@Path("speed")
 	@Produces(MediaType.APPLICATION_JSON)
-	public String speed(@PathParam("{speed}") Integer speed) {
+	public String speed(@FormParam("speed") Integer speed) {
 		ship.setSpeedConstant(speed);
 		return "speed is: " + speed;
 	}
