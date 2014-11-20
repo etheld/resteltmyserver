@@ -70,8 +70,6 @@ public class Ship {
 
 	@Override
 	public String toString() {
-		arriveAfterMs = arriveAfterMs != null && arriveAfterMs - System.currentTimeMillis() > 0 ? (int) (arriveAfterMs - System
-				.currentTimeMillis()) : null;
 		return gson.toJson(this);
 	}
 
@@ -119,7 +117,7 @@ public class Ship {
 		return startTime + arriveAfterMs > System.currentTimeMillis();
 	}
 
-	public void move(Integer arriveAfterMs, Planet destination) {
+	public void move(Integer arriveAfterMs, final Planet destination) {
 		if (startTime == null || startTime + arriveAfterMs > System.currentTimeMillis()) {
 			System.out.println("Starting");
 			startTime = System.currentTimeMillis();
