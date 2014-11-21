@@ -15,6 +15,8 @@ import com.google.gson.GsonBuilder;
 
 public class WorldMap {
 
+    private static final int PLANET_NUM = 30;
+
     public WorldMap() {
         List<String> names = new ArrayList<String>(Arrays.asList("Daturn",
                 "Ufloria", "Druobos", "Iefluna", "Steoaliv", "Ehskov",
@@ -22,12 +24,16 @@ public class WorldMap {
                 "Ebrone", "Crauwei", "Oiwheron", "Fruouliv", "Ofsconoe",
                 "Fleaelia", "Uegrbarth", "Stusainia", "Ueliystiuq", "Bayama",
                 "Ublonoe", "Sletis", "Aeblorix", "Stroeanerth", "Ekskion",
-                "Stoiuter", "Uaplrion", "Blaiioephus", "Iuhuastinda"));
+                "Stoiuter", "Uaplrion", "Blaiioephus", "Iuhuastinda", "Vathea", "Agliuq", "Gluocury", "Aosnadus", "Pluaonides", "Amprichi", "Clioeclite",
+                "Uyclgade", "Skoylawei", "Eykaudrolla", "Danope", "Acheshan", "Broicury", "Aeclosie", "Gloianus", "Eiglion", "Spoyephus", "Oiscferth",
+                "Friydoyliv", "Iapeiskiea", "Mulia", "Awhore", "Slaenope", "Iewhone", "Sleyuruta", "Ugcrion", "Drouonus", "Uywhsichi", "Glapoeruta",
+                "Ayjuydrion", "Vahines", "Aprosie", "Praiter", "Iystomia", "Trioaliv", "Ahsnurn", "Stoyetov", "Iasncillon", "Cliasaelea", "Oeiiysmadus",
+                "Iarilia", "Ubrarvis", "Grunia", "Iubrade", "Flaiomia", "Udblippe", "Chaoegantu", "Oegrmichi", "Smoeyeyria", "Oyfiycluna"));
         Random rng = new Random();
 
         List<Integer> randomNumbers = new ArrayList<>();
 
-        while (randomNumbers.size() < 30 * 30) {
+        while (randomNumbers.size() < PLANET_NUM * 30) {
 
             Integer randomNumber = rng.nextInt(100000) + 10000;
             if (!randomNumbers.contains(randomNumber)) {
@@ -35,7 +41,7 @@ public class WorldMap {
             }
 
         }
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < PLANET_NUM; i++) {
             planets.add(new Planet(names.remove(rng.nextInt(names.size())),
                     200 + rng.nextDouble() * 1800,
                     200 + rng.nextDouble() * 1800));
@@ -86,7 +92,6 @@ public class WorldMap {
         }
         throw new RuntimeException("Planet name not found: " + planetName);
     }
-
 
     public String findPackage(Integer packageId) {
         return packageToPlanet.get(packageId);
