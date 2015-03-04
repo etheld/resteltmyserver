@@ -15,7 +15,7 @@ import com.google.gson.GsonBuilder;
 
 public class WorldMap {
 
-    private static final int PLANET_NUM = 30;
+    private static final int PLANET_NUM = 80;
 
     public WorldMap() {
         List<String> names = new ArrayList<String>(Arrays.asList("Daturn",
