@@ -15,18 +15,10 @@ import com.google.gson.GsonBuilder;
 
 public class WorldMap {
 
-    private static final int PLANET_NUM = 30;
+    private static final int PLANET_NUM = 80;
 
     public WorldMap() {
         List<String> names = new ArrayList<String>(Arrays.asList("Daturn",
-                "Ufloria", "Druobos", "Iefluna", "Steoaliv", "Ehskov",
-                "Snuaogawa", "Aeclvarth", "Gluijeotune", "Amoytrov", "Votune",
-                "Ebrone", "Crauwei", "Oiwheron", "Fruouliv", "Ofsconoe",
-                "Fleaelia", "Uegrbarth", "Stusainia", "Ueliystiuq", "Bayama",
-                "Ublonoe", "Sletis", "Aeblorix", "Stroeanerth", "Ekskion",
-                "Stoiuter", "Uaplrion", "Blaiioephus", "Iuhuastinda", "Vathea", "Agliuq", "Gluocury", "Aosnadus", "Pluaonides", "Amprichi", "Clioeclite",
-                "Uyclgade", "Skoylawei", "Eykaudrolla", "Danope", "Acheshan", "Broicury", "Aeclosie", "Gloianus", "Eiglion", "Spoyephus", "Oiscferth",
-                "Friydoyliv", "Iapeiskiea", "Mulia", "Awhore", "Slaenope", "Iewhone", "Sleyuruta", "Ugcrion", "Drouonus", "Uywhsichi", "Glapoeruta",
                 "Ayjuydrion", "Vahines", "Aprosie", "Praiter", "Iystomia", "Trioaliv", "Ahsnurn", "Stoyetov", "Iasncillon", "Cliasaelea", "Oeiiysmadus",
                 "Iarilia", "Ubrarvis", "Grunia", "Iubrade", "Flaiomia", "Udblippe", "Chaoegantu", "Oegrmichi", "Smoeyeyria", "Oyfiycluna"));
         Random rng = new Random();
