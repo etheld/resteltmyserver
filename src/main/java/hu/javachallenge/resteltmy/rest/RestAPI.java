@@ -18,7 +18,6 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
@@ -28,12 +27,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 @Path("/rest")
 public class RestAPI {
-
-	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
 	@Inject
 	private ApplicationContext applicationContext;
@@ -65,10 +61,10 @@ public class RestAPI {
 		Planet planet = worldMap.getPlanetByName(ship.getCurrentPlanet());
 		Package packageToBePickedUp = findPackageOnPlanet(planet, packageId);
 
-		if (worldMap.findPackage(packageId) == null) {
+		if (isPackageNotFound(packageId)) {
 			return returnPickPackageResponse(PickPackageStatus.NOT_FOUND);
 		} else {
-			if (!Objects.equals(worldMap.findPackage(packageId), ship.getCurrentPlanet())) {
+			if (isUserOnThePlanet(packageId)) {
 				return returnPickPackageResponse(PickPackageStatus.USER_NOT_ON_THE_PLANET);
 			}
 
@@ -84,23 +80,30 @@ public class RestAPI {
 		}
 	}
 
+	private boolean isUserOnThePlanet(Integer packageId) {
+		return !Objects.equals(worldMap.findPackage(packageId),
+				ship.getCurrentPlanet());
+	}
+
 	@POST
 	@Path("go")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String go(@FormParam("planetName") String planetName) {
-		GoModel goModel = new GoModel();
 		Planet destination;
 		try {
 			destination = worldMap.getPlanetByName(planetName);
 		} catch (RuntimeException e) {
-			return returnGoModelResponse(GoStatus.UNKNOWN_PLANET, planetName, null);
+			return returnGoModelResponse(GoStatus.UNKNOWN_PLANET, planetName,
+					null);
 		}
-		if (ship.getCurrentPlanet().equals(destination)) {
-			return returnGoModelResponse(GoStatus.NOTHING_TO_DO, planetName, null);
+		if (areWeOnTheTargetPlanet(destination)) {
+			return returnGoModelResponse(GoStatus.NOTHING_TO_DO, planetName,
+					null);
 		} else {
 			Integer arriveAfterMs = ship.calculateArrive(destination, worldMap);
 			ship.move(arriveAfterMs, destination);
-			return returnGoModelResponse(GoStatus.MOVING, planetName, arriveAfterMs);
+			return returnGoModelResponse(GoStatus.MOVING, planetName,
+					arriveAfterMs);
 		}
 
 	}
@@ -112,8 +115,42 @@ public class RestAPI {
 		ship.setSpeedConstant(speed);
 		return "speed is: " + speed;
 	}
-	
-	private String returnGoModelResponse(GoStatus status, String destination, Integer arriveAfterMs) {
+
+	@GET
+	@Path("reset")
+	public String reset() {
+		((ConfigurableApplicationContext) applicationContext).refresh();
+		return "world has been reset";
+	}
+
+	@POST
+	@Path("dropPackage")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String DropPackage(@FormParam("packageId") final Integer packageId) {
+		Package pack = findPackageOnShip(ship, packageId);
+		if (pack != null) {
+			if (isTargetReached(pack) || canWeDropOnSource(pack)) {
+				ship.dropPackage(pack);
+				return returnDropPackageResponse(
+						DropPackageStatus.PACKAGE_DROPPED,
+						canWeDropOnSource(pack) ? 0 : pack.getFee());
+			} else {
+				return returnDropPackageResponse(
+						DropPackageStatus.NOT_AT_DESTINATION, 0);
+			}
+
+		}
+		return returnDropPackageResponse(DropPackageStatus.NOT_WITH_USER, 0);
+	}
+
+	// Helper Methods
+
+	private boolean areWeOnTheTargetPlanet(Planet destination) {
+		return ship.getCurrentPlanet().equals(destination);
+	}
+
+	private String returnGoModelResponse(GoStatus status, String destination,
+			Integer arriveAfterMs) {
 		GoModel goModel = new GoModel();
 		goModel.setStatus(status);
 		goModel.setDestination(destination);
@@ -121,41 +158,16 @@ public class RestAPI {
 		return new Gson().toJson(goModel);
 	}
 
-	@GET
-	@Path("reset")
-	public void reset() {
-		((ConfigurableApplicationContext) applicationContext).refresh();
+	private boolean canWeDropOnSource(Package pack) {
+		return pack.getOriginalPlanet().equals(ship.getCurrentPlanet());
 	}
 
-	@POST
-	@Path("dropPackage")
-	@Produces(MediaType.APPLICATION_JSON)
-	public String DropPackage(@FormParam("packageId") final Integer packageId) {
-		
-		Package pack = findPackageOnShip(ship, packageId); 
-		// Iterables.find(ship.getPackages(), new Predicate<Package>() {
-		// @Override
-		// public boolean apply(Package input) {
-		// return input.getId() == packageId;
-		// }
-		// });
-
-		if (pack != null) {
-			boolean targetReached = pack.getTargetPlanet().equals(ship.getCurrentPlanet());
-			boolean dropAtSource = pack.getOriginalPlanet().equals(ship.getCurrentPlanet());
-			if (targetReached || dropAtSource) {
-				ship.dropPackage(pack);
-				return returnDropPackageResponse(DropPackageStatus.PACKAGE_DROPPED, dropAtSource ? 0 : pack.getFee());
-			} else {
-				return returnDropPackageResponse(DropPackageStatus.NOT_AT_DESTINATION, 0);
-			}
-
-		}
-		return returnDropPackageResponse(DropPackageStatus.NOT_WITH_USER, 0);
+	private boolean isTargetReached(Package pack) {
+		return pack.getTargetPlanet().equals(ship.getCurrentPlanet());
 	}
 
 	private Package findPackageOnShip(Ship ship2, Integer packageId) {
-		for(Package pack: ship2.getPackages()) {
+		for (Package pack : ship2.getPackages()) {
 			if (pack.getId().equals(packageId)) {
 				return pack;
 			}
@@ -185,4 +197,9 @@ public class RestAPI {
 			}
 		});
 	}
+
+	private boolean isPackageNotFound(Integer packageId) {
+		return worldMap.findPackage(packageId) == null;
+	}
+
 }
